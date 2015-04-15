@@ -321,11 +321,26 @@ class Controleur(object):
             d2 = int(math.ceil(random.random()*6))
             return d1+d2
 
+
+    def obtenirInfoJoueurs(self):
+        a = []
+        for joueur in self._joueurs:
+            a.append((joueur.id(),
+                      joueur.estHumain,
+                      joueur.nombrePointsVictoireVisibles(),
+                      joueur.nombreCartesRessources(),
+                      joueur.nombreChevaliers()
+            ))
+
+        return a
+
 f = file('out.txt', 'w+')
 sys.stdout = f
 
 c = Controleur(['Humain','AI','AI','Humain'])
 c.jouer()
+
+print c.obtenirInfoJoueurs()
 
 f.close()
 

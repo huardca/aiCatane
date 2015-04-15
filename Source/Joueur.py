@@ -91,6 +91,8 @@ class Joueur(object):
         # Indique si le joueur peut échanger des ressources au taux 3:1
         self._possedePortGenerique = False
 
+        self.estHumain = False
+
 
     # Méthodes devant être redéfinies par la sous-classe:
     

@@ -66,6 +66,9 @@ class JoueurHumain(Joueur):
         #tableau des actions du tour precedent
         self.actionsPrecedentes = []
 
+        self.estHumain = True
+
+
     def premierTour(self,mappe):
         
         self.premiereColonie = self.trouverMeilleureIntersectionColonie(mappe)
@@ -138,7 +141,7 @@ class JoueurHumain(Joueur):
                 return action
 
             if self.peutJouerCarteChevalier():
-                return (Action.JOUER_CARTE_CHEVALIER, [])
+                return (Action.JOUER_CARTE_CHEVALIER, self.jouerVoleurs(mappe, infoJoueurs))
 
             self.gererExtra()
 
@@ -409,6 +412,9 @@ class JoueurHumain(Joueur):
 
         for i in range(len(infoJoueurs)):
             if infoJoueurs[i] == self.id():
+                continue
+
+            if infoJoueurs[i][1] == 0:
                 continue
 
             if infoJoueurs[i][0] > max:
@@ -882,7 +888,7 @@ class JoueurHumain(Joueur):
     # Deux choix, carte chevalier, voleur
     def pigerRessourceAleatoirement(self):
         super(JoueurHumain, self).pigerRessourceAleatoirement()
-                  
+
     # On peut savoir si on gagne avec ca
     def nombrePointsVictoire(self):
         super(JoueurHumain, self).nombrePointsVictoire()
