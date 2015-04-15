@@ -101,9 +101,9 @@ class JoueurAI(Joueur):
                     return (Action.ACHETER_CARTE,[])
 
         for a in actionsPossibles:
-            if type(a) is not int:
-                if a[0] == Action.JOUER_CARTE_CHEVALIER:
-                    return a
+            if type(a) is int:
+                if a == Action.JOUER_CARTE_CHEVALIER:
+                    return (a,[])
                 
         for a in actionsPossibles:
             if type(a) is not int:
