@@ -66,7 +66,6 @@ class JoueurHumain(Joueur):
         #tableau des actions du tour precedent
         self.actionsPrecedentes = []
 
-
     def premierTour(self,mappe):
         
         self.premiereColonie = self.trouverMeilleureIntersectionColonie(mappe)
@@ -374,7 +373,46 @@ class JoueurHumain(Joueur):
         else:
             return False
 
-        
+    def jouerVoleurs(self,mappe,infoJoueurs):
+
+        max = 0
+        maxPlayer = 0
+
+        for i in range(len(infoJoueurs)):
+            if infoJoueurs[i] == self.id():
+                continue
+
+            if infoJoueurs[i][0] > max:
+                max = infoJoueurs[i][0]
+                maxPlayer = i
+
+        intersections = mappe.obtenirNumerosIntersectionsJoueur(maxPlayer)
+
+        territoires = []
+
+        for intersection in intersections:
+            for ter in mappe.obtenirIntersection(intersection).obtenirTerritoiresVoisins():
+                if ter not in territoires:
+                    territoires.append(ter)
+
+        voisins = {}
+        for ter in territoires:
+            voisins[ter.id()] = 0
+
+            for int in ter.obtenirVoisins():
+                if int.id() in intersections:
+                    voisins[ter.id()] += 1
+
+        if mappe.obtenirTerritoireContenantVoleurs().id() in voisins:
+            del voisins[mappe.obtenirTerritoireContenantVoleurs().id()]
+        max = -1
+        maxInt = -1
+        for key, value in voisins.iteritems():
+            if value > max:
+                max = value
+                maxInt = key
+
+        return (maxInt,maxPlayer)  # Retourne une paire non valide
 
     def deciderCommerce(self):
 
@@ -810,10 +848,15 @@ class JoueurHumain(Joueur):
 
         else:
             return False
-    
 
+    # Se fait voler une carte
+    # Deux choix, carte chevalier, voleur
+    def pigerRessourceAleatoirement(self):
+        super(JoueurHumain, self).pigerRessourceAleatoirement()
                  
-            
+    # On peut savoir si on gagne avec ca
+    def nombrePointsVictoire(self):
+        super(JoueurHumain, self).nombrePointsVictoire()
             
 
 
