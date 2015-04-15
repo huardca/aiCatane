@@ -882,7 +882,7 @@ class JoueurHumain(Joueur):
     # Deux choix, carte chevalier, voleur
     def pigerRessourceAleatoirement(self):
         super(JoueurHumain, self).pigerRessourceAleatoirement()
-                 
+                  
     # On peut savoir si on gagne avec ca
     def nombrePointsVictoire(self):
         super(JoueurHumain, self).nombrePointsVictoire()
