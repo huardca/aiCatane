@@ -1,2 +1,4 @@
 *.pyc
 workspace.xml
+.idea/*
+Source/out.txt
