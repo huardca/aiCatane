@@ -31,7 +31,7 @@ class HumanAction:
 ################## Joueur Intelligent
 class JoueurHumain(Joueur):
 
-    
+
     def __init__(self,id):
         super(JoueurHumain,self).__init__(id)
 
@@ -68,7 +68,7 @@ class JoueurHumain(Joueur):
 
 
     def premierTour(self,mappe):
-        
+
         self.premiereColonie = self.trouverMeilleureIntersectionColonie(mappe)
         self.premiereIntersectionRoute = self.trouverMeilleureIntersectionRoute(self.premiereColonie,mappe)[0]
 
@@ -78,8 +78,8 @@ class JoueurHumain(Joueur):
         self.ajusterIncomeStats(mappe, self.premiereColonie)
 
         return (self.premiereColonie._id,self.premiereIntersectionRoute._id)
-        
-    
+
+
     def deuxiemeTour(self,mappe):
 
         self.deuxiemeColonie = self.trouverMeilleureIntersectionColonie(mappe)
@@ -127,31 +127,43 @@ class JoueurHumain(Joueur):
                     print(str(action))
                     return action
             print("TRY CITY")
-            action = self.tryBuildBestCity()
+            action = self.tryBuildBestCity(mappe)
             if action is not None:
                 print(str(action))
                 return action
 
-            print("TRY CARTE")
-            action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
-            if action is not None:
-                print(str(action))
-                return action
+            #print("TRY CARTE")
+            #action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
+            #if action is not None:
+            #    print(str(action))
+            #    return action
 
             if self.peutJouerCarteChevalier():
                 return (Action.JOUER_CARTE_CHEVALIER, [])
 
             self.gererExtra()
 
-                
+
         print 'TERMINER'
         return Action.TERMINER
 
     def gererExtra(self):
         pass
 
-    def tryBuildBestCity(self):
-        pass
+
+    def tryBuildBestCity(self, mappe):
+
+        bestCity = None
+        bestScore = 0
+
+        for i in [mappe.obtenirIntersection(x) for x in mappe.obtenirNumerosIntersectionsJoueur(self._id)]:
+            if i.occupation == Occupation.COLONIE:
+                score = self.calculerScoreIntersectionColonie()
+
+        if bestCity is not None:
+            return (Action.AJOUTER_VILLE, bestCity._id)
+
+        return None
 
     def tryBuildBestRoad(self, mappe):
 
@@ -187,22 +199,19 @@ class JoueurHumain(Joueur):
 
         ressourceDiff = [self._ressources[x] - y for x, y in zip(self._ressources, necessaryResources)]
 
-        print("RESSOURCE DIFF " + str(action) + " : " + str(ressourceDiff))
-
         if not any(t < 0 for t in ressourceDiff):
             if data is None:
                 return action
             else:
                 return (action,data)
 
-        priorityList = [Ressource.ARGILE, Ressource.BOIS, Ressource.BLE, Ressource.LAINE, Ressource.MINERAL]
+        priorityList = self.priorityList()
 
         firstTrade = None
 
         for r in priorityList:
             if(ressourceDiff[r] >= 0):
                 continue
-            print("MISSING " + str(r))
 
             for r2 in priorityList[::-1]:
                 nbTrade = 0
@@ -217,16 +226,11 @@ class JoueurHumain(Joueur):
                     if not any(t < 0 for t in ressourceDiff):
                         break
 
-                    print("CAN TRADE " + str(r2))
                     while(ressourceDiff[r] < 0 and ressourceDiff[r2] >= nbTrade):
-                        print("TRADE " + str(nbTrade) + " " + str(r2) + " for 1 " + str(r))
                         if firstTrade is None:
                             firstTrade = (Action.ECHANGER_RESSOURCES,[nbTrade, r2, r])
                         ressourceDiff[r] += 1
                         ressourceDiff[r2] -= nbTrade
-                        print("RESSOURCE DIFF: " + str(ressourceDiff))
-
-        print("END: " + str(ressourceDiff))
 
         if not any(t < 0 for t in ressourceDiff):
             print("ON ECHANGE: " + str(firstTrade))
@@ -234,6 +238,10 @@ class JoueurHumain(Joueur):
 
         print("FAIL " + str(action))
         return None
+
+    def priorityList(self):
+        return [Ressource.ARGILE, Ressource.BOIS, Ressource.BLE, Ressource.LAINE, Ressource.MINERAL] \
+            if self.state == State.EXPAND else [Ressource.MINERAL, Ressource.BLE, Ressource.ARGILE, Ressource.BOIS, Ressource.LAINE]
 
     def getBestNeighbor(self, intersection, mappe):
 
@@ -272,8 +280,15 @@ class JoueurHumain(Joueur):
         return meilleureIntersection
 
     #TODO: STATES
-    def chooseState(self):
-       return State.EXPAND
+    def chooseState(self, mappe):
+
+        if(self.state == State.EXPAND):
+            if len(mappe.obtenirNumerosIntersectionsJoueur(self._id)) >= 4:
+                pass
+                #return State.MATURE
+        elif(self.state == State.MATURE):
+            pass
+
 
     def ajusterIncomeStats(self, mappe, intersection):
         if intersection is None:
@@ -293,16 +308,16 @@ class JoueurHumain(Joueur):
 
         for i in mappe.obtenirToutesLesIntersections(): #pour toutes les intersections
             if mappe.peutConstruireOccupationInitial(i._id): #si on peut poser une colonie sur l'intersection
-                    if not i.occupe():
-                        score = self.calculerScoreIntersectionColonie(i, mappe)
+                if not i.occupe():
+                    score = self.calculerScoreIntersectionColonie(i, mappe)
 
-                        if(score > maxScore):
-                            maxScore = score
-                            meilleureIntersection = i
+                    if(score > maxScore):
+                        maxScore = score
+                        meilleureIntersection = i
 
         print "COLONIE"
         print meilleureIntersection._id
-                                              
+
         return meilleureIntersection
 
     def calculerScoreIntersectionColonie(self, intersection, mappe):
@@ -352,7 +367,7 @@ class JoueurHumain(Joueur):
 
         return (bestRoad,maxRoadScore)
 
-                                        
+
     def obtenirValeurProductionChiffre(self,chiffre):
 
         if chiffre == 2 or chiffre == 12:
@@ -367,7 +382,7 @@ class JoueurHumain(Joueur):
             return 0
         else:
             return 5
-        
+
 
     def deciderJouerCarteChevalier(self,mappe,infoJoueurs):
 
@@ -383,36 +398,36 @@ class JoueurHumain(Joueur):
         territoireAVoler = False
 
         for t in mappe.obtenirTousLesTerritoires():
-            
+
             if t._valeur == 6 or t._valeur == 8:
-                
+
                 for i in t.obtenirVoisins():
                     if i.obtenirOccupant() != self._id and i.obtenirOccupant() != None:
                         ennemiBonneZone = True
                         joueurAVoler = i.obtenirOccupant()
                         territoireAVoler = t
 
-                    
+
 
             if joueurAVoler != False:
                 break;
 
         if ennemiBonneZone and voleurSurMaRegion:
-               return [territoireAVoler._id, joueurAVoler]
+            return [territoireAVoler._id, joueurAVoler]
 
         else:
             return False
 
-        
+
 
     def deciderCommerce(self):
 
         ressourceEnManque = self.ressourceEnManque()
 
         if ressourceEnManque != False:
-            
+
             if ressourceEnManque == Ressource.BOIS:
-                
+
                 if self.choisirEchange(Ressource.MINERAL, Ressource.BOIS) != False:
                     return self.choisirEchange(Ressource.MINERAL,Ressource.BOIS)
 
@@ -424,9 +439,9 @@ class JoueurHumain(Joueur):
 
                 if self.choisirEchange(Ressource.ARGILE, Ressource.BOIS) != False:
                     return self.choisirEchange(Ressource.ARGILE, Ressource.BOIS)
-                
+
                 return False
-                
+
             elif ressourceEnManque == Ressource.ARGILE:
 
                 if self.choisirEchange(Ressource.MINERAL, Ressource.ARGILE) != False:
@@ -442,7 +457,7 @@ class JoueurHumain(Joueur):
                     return self.choisirEchange(Ressource.BOIS, Ressource.ARGILE)
 
                 return False
-                
+
             elif ressourceEnManque == Ressource.MINERAL:
 
                 if self.choisirEchange(Ressource.BOIS, Ressource.MINERAL) != False:
@@ -452,13 +467,13 @@ class JoueurHumain(Joueur):
                     return self.choisirEchange(Ressource.ARGILE, Ressource.MINERAL)
 
                 return False
-                                        
+
 
             elif ressourceEnManque == Ressource.BLE:
 
                 if self.choisirEchange(Ressource.BOIS, Ressource.BLE) != False:
                     return self.choisirEchange(Ressource.BOIS, Ressource.BLE)
-                
+
                 if self.choisirEchange(Ressource.LAINE, Ressource.BLE) != False:
                     return self.choisirEchange(Ressource.LAINE, Ressource.BLE)
 
@@ -469,7 +484,7 @@ class JoueurHumain(Joueur):
                     return self.choisirEchange(Ressource.MINERAL, Ressource.BLE)
 
                 return False
-            
+
             elif ressourceEnManque == Ressource.LAINE:
 
                 if self.choisirEchange(Ressource.MINERAL, Ressource.LAINE) != False:
@@ -479,10 +494,10 @@ class JoueurHumain(Joueur):
                     return self.choisirEchange(Ressource.ARGILE, Ressource.LAINE)
 
                 return False
-            
+
         return False
-                            
-    
+
+
     def ressourceEnManque(self):
 
         if self.quantiteRessources(Ressource.BLE) == 0:
@@ -495,21 +510,21 @@ class JoueurHumain(Joueur):
             return Ressource.LAINE
         if self.quantiteRessources(Ressource.MINERAL) == 0:
             return Ressource.MINERAL
-        
+
 
         return False
 
 
     def choisirEchange(self,ressourceOfferte,ressourceDemandee):
-        
+
         if self.quantiteRessources(ressourceOfferte) < 2:
             return False
-        
+
         elif self.quantiteRessources(ressourceOfferte) == 2:
 
             if ressourceOfferte in self._peutEchanger:
-                return [2, ressourceOfferte, ressourceDemandee]           
-            
+                return [2, ressourceOfferte, ressourceDemandee]
+
         elif self.quantiteRessources(ressourceOfferte) >= 3 and self.quantiteRessources(ressourceOfferte) < 5:
 
             if ressourceOfferte in self._peutEchanger:
@@ -517,7 +532,7 @@ class JoueurHumain(Joueur):
 
             if self._possedePortGenerique:
                 return [3, ressourceOfferte, ressourceDemandee]
-            
+
 
         elif self.quantiteRessources(ressourceOfferte) >= 5:
 
@@ -528,20 +543,20 @@ class JoueurHumain(Joueur):
                 return [3, ressourceOfferte, ressourceDemandee]
 
             return [4, ressourceOfferte, ressourceDemandee]
-        
+
 
         return False
 
     def echangesPossibles(self):
 
         echangesPossibles = []
-        
-        
+
+
         if self._peutEchanger:
 
-            
+
             if Ressource.BOIS in self._peutEchanger:
-                
+
                 if self.quantiteRessources(Ressource.BOIS) >= 2:
                     echangesPossibles.append([2, Ressource.BOIS, Ressource.ARGILE])
                     echangesPossibles.append([2, Ressource.BOIS, Ressource.MINERAL])
@@ -549,7 +564,7 @@ class JoueurHumain(Joueur):
                     echangesPossibles.append([2, Ressource.BOIS, Ressource.LAINE])
 
             if Ressource.ARGILE in self._peutEchanger:
-                
+
                 if self.quantiteRessources(Ressource.ARGILE) >= 2:
                     echangesPossibles.append([2, Ressource.ARGILE, Ressource.BOIS])
                     echangesPossibles.append([2, Ressource.ARGILE, Ressource.MINERAL])
@@ -557,7 +572,7 @@ class JoueurHumain(Joueur):
                     echangesPossibles.append([2, Ressource.ARGILE, Ressource.LAINE])
 
             if Ressource.MINERAL in self._peutEchanger:
-                
+
                 if self.quantiteRessources(Ressource.MINERAL) >= 2:
                     echangesPossibles.append([2, Ressource.MINERAL, Ressource.BOIS])
                     echangesPossibles.append([2, Ressource.MINERAL, Ressource.ARGILE])
@@ -565,7 +580,7 @@ class JoueurHumain(Joueur):
                     echangesPossibles.append([2, Ressource.MINERAL, Ressource.LAINE])
 
             if Ressource.BLE in self._peutEchanger:
-                
+
                 if self.quantiteRessources(Ressource.BLE) >= 2:
                     echangesPossibles.append([2, Ressource.BLE, Ressource.BOIS])
                     echangesPossibles.append([2, Ressource.BLE, Ressource.ARGILE])
@@ -573,13 +588,13 @@ class JoueurHumain(Joueur):
                     echangesPossibles.append([2, Ressource.BLE, Ressource.LAINE])
 
             if Ressource.LAINE in self._peutEchanger:
-                
+
                 if self.quantiteRessources(Ressource.LAINE) >= 2:
                     echangesPossibles.append([2, Ressource.LAINE, Ressource.BOIS])
                     echangesPossibles.append([2, Ressource.LAINE, Ressource.ARGILE])
                     echangesPossibles.append([2, Ressource.LAINE, Ressource.MINERAL])
                     echangesPossibles.append([2, Ressource.LAINE, Ressource.BLE])
-                
+
 
         if self._possedePortGenerique:
 
@@ -612,7 +627,7 @@ class JoueurHumain(Joueur):
                 echangesPossibles.append([3, Ressource.LAINE, Ressource.ARGILE])
                 echangesPossibles.append([3, Ressource.LAINE, Ressource.MINERAL])
                 echangesPossibles.append([3, Ressource.LAINE, Ressource.BLE])
-            
+
 
         if self.quantiteRessources(Ressource.BOIS) >= 4:
             echangesPossibles.append([4, Ressource.BOIS, Ressource.ARGILE])
@@ -650,7 +665,7 @@ class JoueurHumain(Joueur):
 
         return False
 
-            
+
 
     def deciderConstructionAchat(self,mappe):
 
@@ -691,18 +706,18 @@ class JoueurHumain(Joueur):
 
         return False
 
-        
+
 
     def choisirFutureVille(self,mappe):
-        
+
         colonies = self.possibleAjouterVille(mappe)
         meilleureValeurProduction = 0
         futureVille = 0
 
         if colonies != False:
-            
+
             for i in colonies:
-                
+
                 valeurProduction = 0      #demarche pour trouver la meilleure valeur de production
 
                 for t in i.obtenirTerritoiresVoisins():
@@ -716,7 +731,7 @@ class JoueurHumain(Joueur):
 
         return False
 
-    
+
 
     def possibleAjouterVille(self,mappe):
 
@@ -729,7 +744,7 @@ class JoueurHumain(Joueur):
 
         if colonies:
             return colonies
-        
+
         else:
             return False
 
@@ -760,12 +775,12 @@ class JoueurHumain(Joueur):
 
         return False
 
-                    
-                                                                                        
+
+
     def possibleAjouterColonie(self,mappe):
 
         possiblesIntersections = []
-        
+
         if self.quantiteRessources(Ressource.BLE) >= 1 and self.quantiteRessources(Ressource.ARGILE) >= 1 and self.quantiteRessources(Ressource.BOIS) >= 1 and self.quantiteRessources(Ressource.LAINE) >= 1:
             for i in mappe.obtenirToutesLesIntersections():
                 if mappe.peutConstruireOccupation(i._id,self._id):
@@ -775,10 +790,10 @@ class JoueurHumain(Joueur):
 
         if possiblesIntersections:
             return possiblesIntersections
-                
+
         return False
 
-    
+
 
     def choisirFutureRoute(self,mappe):
 
@@ -795,9 +810,9 @@ class JoueurHumain(Joueur):
                                 possiblesRoutes.append([i._id,j._id])
 
         if possiblesRoutes:
-            
+
             for r in possiblesRoutes:
-                
+
                 valeurProduction = 0
 
                 for t in r[1].obtenirTerritoiresVoisins():
@@ -808,17 +823,17 @@ class JoueurHumain(Joueur):
                     futureRoute = [r[0],r[1]]
 
             return futureRoute
-                
+
 
         return False
-                            
-                
-        
+
+
+
 
     def possibleAjouterRoute(self,mappe):
 
         emplacementsPossibles = []
-        
+
         if self.quantiteRessources(Ressource.BOIS) >= 1 and self.quantiteRessources(Ressource.ARGILE) >= 1:
             for i in mappe.obtenirToutesLesIntersections():
                 for j in i.obtenirVoisins():
@@ -828,12 +843,12 @@ class JoueurHumain(Joueur):
 
         if emplacementsPossibles:
             return emplacementsPossibles
-            
+
         return False
-            
+
 
     def possibleAcheterCarte(self):
-        
+
         if self.quantiteRessources(Ressource.BLE) >= 1 and self.quantiteRessources(Ressource.LAINE) >= 1 and self.quantiteRessources(Ressource.MINERAL) >= 1:
             return True
 
