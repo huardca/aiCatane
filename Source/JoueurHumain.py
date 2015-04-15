@@ -130,17 +130,46 @@ class JoueurHumain(Joueur):
                 print(str(action))
                 return action
 
-            print("TRY CARTE")
-            action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
-            if action is not None:
-               print(str(action))
-               return action
-
-            if self.peutJouerCarteChevalier():
-                return (Action.JOUER_CARTE_CHEVALIER, [])
-
             self.gererExtra()
+        elif self.state == State.MATURE:
+            print("TRY CITY")
+            action = self.tryBuildBestCity(mappe)
+            if action is not None:
+                print(str(action))
+                return action
+            spot = self.getBestColonySpot(mappe)
+            if spot is not None:
+                print ("SPOT: " + str(spot._id))
+                bestNeighbor = self.getBestNeighbor(spot, mappe)
+                if bestNeighbor is not None:
+                    print("BEST NEIGHBOR: " + str(bestNeighbor._id))
+                    action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id])
+                    if action is not None:
+                        print(str(action))
+                        return action
+                else:
+                    print("NO BEST NEIGHBOR")
+                    action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id])
+                    if action is not None:
+                        print("BUILD ROAD: " + str(action))
+                        return action
+            else:
+                print("NO BEST SPOT")
+                action = self.tryBuildBestRoad(mappe)
+                if action is not None:
+                    print(str(action))
+                    return action
 
+
+
+        print("TRY CARTE")
+        action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
+        if action is not None:
+           print(str(action))
+           return action
+
+        if self.peutJouerCarteChevalier():
+            return (Action.JOUER_CARTE_CHEVALIER, [])
 
         print 'TERMINER'
         return Action.TERMINER
@@ -289,8 +318,7 @@ class JoueurHumain(Joueur):
 
         if(self.state == State.EXPAND):
             if len(mappe.obtenirNumerosIntersectionsJoueur(self._id)) >= 4:
-                pass
-                #return State.MATURE
+                return State.MATURE
         elif(self.state == State.MATURE):
             pass
 
