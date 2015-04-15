@@ -112,34 +112,34 @@ class JoueurHumain(Joueur):
                     print("BEST NEIGHBOR: " + str(bestNeighbor._id))
                     action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id])
                     if action is not None:
-                        print(action)
+                        print(str(action))
                         return action
                 else:
                     print("NO BEST NEIGHBOR")
                     action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id])
                     if action is not None:
-                        print(action)
+                        print("BUILD ROAD: " + str(action))
                         return action
             else:
                 print("NO BEST SPOT")
                 action = self.tryBuildBestRoad(mappe)
                 if action is not None:
-                    print(action)
+                    print(str(action))
                     return action
             print("TRY CITY")
             action = self.tryBuildBestCity()
             if action is not None:
-                print(action)
+                print(str(action))
                 return action
 
             print("TRY CARTE")
-            action = self.tryBuildCommodity(Action.ACHETER_CARTE, None)
+            action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
             if action is not None:
-                print(action)
+                print(str(action))
                 return action
 
             if self.peutJouerCarteChevalier():
-                return (Action.JOUER_CARTE_CHEVALIER)
+                return (Action.JOUER_CARTE_CHEVALIER, [])
 
             self.gererExtra()
 
@@ -195,33 +195,32 @@ class JoueurHumain(Joueur):
             else:
                 return (action,data)
 
-
-        if(len(self._peutEchanger) == 0 and not self._possedePortGenerique):
-            return None
-
         priorityList = [Ressource.ARGILE, Ressource.BOIS, Ressource.BLE, Ressource.LAINE, Ressource.MINERAL]
 
         firstTrade = None
 
         for r in priorityList:
-            if(r >= 0):
+            if(ressourceDiff[r] >= 0):
                 continue
             print("MISSING " + str(r))
 
             for r2 in priorityList[::-1]:
                 nbTrade = 0
-                if self._peutEchanger.contains(r2) and ressourceDiff[r2] >= 2:
+                if r2 in self._peutEchanger and ressourceDiff[r2] >= 2:
                     nbTrade = 2
                 elif self._possedePortGenerique and ressourceDiff[r2] >= 3:
                     nbTrade = 3
                 elif ressourceDiff >= 4:
                     nbTrade = 4
 
-                if nbTrade > 0:
+                if nbTrade > 0 and ressourceDiff[r2] >= nbTrade:
+                    if not any(t < 0 for t in ressourceDiff):
+                        break
+
                     print("CAN TRADE " + str(r2))
                     while(ressourceDiff[r] < 0 and ressourceDiff[r2] >= nbTrade):
                         print("TRADE " + str(nbTrade) + " " + str(r2) + " for 1 " + str(r))
-                        if firstTrade is not None:
+                        if firstTrade is None:
                             firstTrade = (Action.ECHANGER_RESSOURCES,[nbTrade, r2, r])
                         ressourceDiff[r] += 1
                         ressourceDiff[r2] -= nbTrade
@@ -230,6 +229,7 @@ class JoueurHumain(Joueur):
         print("END: " + str(ressourceDiff))
 
         if not any(t < 0 for t in ressourceDiff):
+            print("ON ECHANGE: " + str(firstTrade))
             return firstTrade
 
         print("FAIL " + str(action))
@@ -308,27 +308,27 @@ class JoueurHumain(Joueur):
     def calculerScoreIntersectionColonie(self, intersection, mappe):
 
         score = 0
+        GEN_MULTIPLIER = 1.2
+        SPEC_MULTIPLIER = 1.5
 
-        genericMultiplier = 1.2 if isinstance(intersection,PortGenerique) or self._possedePortGenerique else 1
+        genericMultiplier = GEN_MULTIPLIER if isinstance(intersection,PortGenerique) or self._possedePortGenerique else 1
         newIncome = list(self.incomeStats)
 
         for t in intersection.obtenirTerritoiresVoisins(): #pour tous les territoires de l'intersection
             if t.ressource() is not None:
                 newIncome[t.ressource()] += float(self.obtenirValeurProductionChiffre(t._valeur)) / 36.0
 
-        if isinstance(intersection,PortGenerique):
-            genericMultiplier = 1 if self._possedePortGenerique else 1.2
         if isinstance(intersection,PortSpecialise):
             if not self.peutEchangerPortSpecialise(intersection.ressource()):
-                newIncome[intersection.ressource()] *= 1.5
+                newIncome[intersection.ressource()] *= SPEC_MULTIPLIER
 
         for r in self._peutEchanger:
-            newIncome[r] *= 1.5
+            newIncome[r] *= SPEC_MULTIPLIER
 
-        for r in newIncome:
-            score += r
+        for idx, r in enumerate(newIncome):
+            score += r * genericMultiplier - self.incomeStats[idx] * (GEN_MULTIPLIER if self._possedePortGenerique else 1)
 
-        score *- genericMultiplier
+        print("SCORE INTERSECTION " + str(intersection._id) + " : " + str(score))
 
         return score
 
