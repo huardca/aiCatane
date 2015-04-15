@@ -94,7 +94,6 @@ class JoueurHumain(Joueur):
         if self.peutJouerCarteChevalier():
             return (Action.JOUER_CARTE_CHEVALIER, [])
 
-        #TODO: STATES
         if(self.state == State.EXPAND):
             action = self.expand(mappe)
             if action is not None:
@@ -104,18 +103,10 @@ class JoueurHumain(Joueur):
             if action is not None:
                 return action
 
-            if self.shouldBuyCard(mappe, infoJoueurs):
-                print("TRY CARTE")
-                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
-                if action is not None:
-                   return action
-            if self.shouldBuildRoad(mappe):
-               print("BUILD LONGEST ROAD")
-               action = self.tryBuildBestRoad(mappe, True)
-               if action is not None:
-                   return action
+            action = self.roadOrCard(mappe, infoJoueurs)
+            if action is not None:
+                return action
 
-            self.gererExtra()
         elif self.state == State.MATURE:
             print("TRY CITY")
             action = self.tryBuildBestCity(mappe)
@@ -124,11 +115,9 @@ class JoueurHumain(Joueur):
             action = self.expand(mappe)
             if action is not None:
                 return action
-            if self.shouldBuyCard(mappe, infoJoueurs):
-                print("TRY CARTE")
-                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], True)
-                if action is not None:
-                   return action
+            action = self.roadOrCard(mappe, infoJoueurs)
+            if action is not None:
+                return action
         elif self.state == State.END:
             print("TRY CITY")
             action = self.tryBuildBestCity(mappe)
@@ -137,30 +126,12 @@ class JoueurHumain(Joueur):
             action = self.expand(mappe)
             if action is not None:
                 return action
+            action = self.roadOrCard(mappe, infoJoueurs)
+            if action is not None:
+                return action
 
-            #endGame = self.getEndGame(mappe)
-            if self.favorRoad(mappe, infoJoueurs):
-                if self.shouldBuildRoad(mappe):
-                    print("BUILD LONGEST ROAD")
-                    action = self.tryBuildBestRoad(mappe, True)
-                    if action is not None:
-                        return action
-                if self.shouldBuyCard(mappe, infoJoueurs):
-                    print("TRY CARTE")
-                    action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
-                    if action is not None:
-                       return action
-            else:
-                if self.shouldBuyCard(mappe, infoJoueurs):
-                    print("TRY CARTE")
-                    action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
-                    if action is not None:
-                       return action
-                if self.shouldBuildRoad(mappe):
-                    print("BUILD LONGEST ROAD")
-                    action = self.tryBuildBestRoad(mappe, True)
-                    if action is not None:
-                        return action
+
+        self.gererExtra()
 
         print 'TERMINER'
         return Action.TERMINER
@@ -168,6 +139,30 @@ class JoueurHumain(Joueur):
     def gererExtra(self):
         pass
 
+    def roadOrCard(self, mappe, infoJoueurs):
+        if self.favorRoad(mappe, infoJoueurs):
+            if self.shouldBuildRoad(mappe):
+                print("BUILD LONGEST ROAD")
+                action = self.tryBuildBestRoad(mappe, True)
+                if action is not None:
+                    return action
+            if self.shouldBuyCard(mappe, infoJoueurs):
+                print("TRY CARTE")
+                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
+                if action is not None:
+                   return action
+        else:
+            if self.shouldBuyCard(mappe, infoJoueurs):
+                print("TRY CARTE")
+                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
+                if action is not None:
+                   return action
+            if self.shouldBuildRoad(mappe):
+                print("BUILD LONGEST ROAD")
+                action = self.tryBuildBestRoad(mappe, True)
+                if action is not None:
+                    return action
+        return None
 
     def tryBuildBestCity(self, mappe):
 
@@ -212,7 +207,6 @@ class JoueurHumain(Joueur):
         if bestRoad is not None:
             return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[bestRoadOrigin._id, bestRoad._id], True)
 
-        #TODO: Better
         if anyRoad:
 
             intersections = [i for i in range(1,55) if mappe._accesRoute(i,self._id)]
@@ -238,8 +232,9 @@ class JoueurHumain(Joueur):
                 randomRoute = random.choice(bestRoads)
                 return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[randomRoute[0]._id,randomRoute[1]._id], True)
 
-            randomRoute = random.choice(allRoads)
-            return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[randomRoute[0]._id,randomRoute[1]._id], True)
+            if len(allRoads) > 0:
+                randomRoute = random.choice(allRoads)
+                return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[randomRoute[0]._id,randomRoute[1]._id], True)
 
         return None
 
@@ -306,22 +301,28 @@ class JoueurHumain(Joueur):
         return [Ressource.ARGILE, Ressource.BOIS, Ressource.BLE, Ressource.LAINE, Ressource.MINERAL] \
             if self.state == State.EXPAND else [Ressource.MINERAL, Ressource.BLE, Ressource.ARGILE, Ressource.BOIS, Ressource.LAINE]
 
-    def getBestNeighbor(self, intersection, mappe):
+    def getBestNeighbor(self, bestIntersection, mappe):
 
         maxScore = 0
-        meilleureIntersection = 0
+        meilleureIntersection = None
+        origineIntersection = None
 
-        for i in intersection.obtenirVoisins():
-            if mappe.peutConstruireOccupation(i._id, self._id): #si on peut poser une colonie sur l'intersection
-                if not i.occupe():
-                    score = self.calculerScoreIntersectionColonie(i, mappe)
+        for i in mappe.obtenirToutesLesIntersections():
+            if mappe._accesRoute(i._id,self._id):
+                for j in i.obtenirVoisins():
+                    if mappe.peutConstruireOccupation(j._id, self._id): #si on peut poser une colonie sur l'intersection
+                        if not j.occupe():
+                            score = self.calculerScoreIntersectionColonie(j, mappe)
 
-                    if(score > maxScore):
-                        maxScore = score
-                        meilleureIntersection = i
+                            if(score > maxScore):
+                                maxScore = score
+                                meilleureIntersection = j
+                                origineIntersection = i
 
-        if maxScore > 1.5 * self.calculerScoreIntersectionColonie(intersection, mappe):
-            return meilleureIntersection
+        if maxScore > 1.5 * self.calculerScoreIntersectionColonie(bestIntersection, mappe):
+            return (origineIntersection,meilleureIntersection)
+
+        return (None, None)
 
     def getLessBadRoad(self, intersection, mappe):
         #TODO: Mieux faire ceci
@@ -342,7 +343,6 @@ class JoueurHumain(Joueur):
 
         return meilleureIntersection
 
-    #TODO: STATES
     def chooseState(self, mappe):
 
         if(self.state == State.EXPAND):
@@ -548,9 +548,9 @@ class JoueurHumain(Joueur):
         if spot is not None:
             print ("SPOT: " + str(spot._id))
             bestNeighbor = self.getBestNeighbor(spot, mappe)
-            if bestNeighbor is not None:
-                print("BEST NEIGHBOR: " + str(bestNeighbor._id))
-                action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id], True)
+            if bestNeighbor[1] is not None:
+                print("BEST NEIGHBOR: " + str(bestNeighbor[1]._id))
+                action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [bestNeighbor[0]._id, bestNeighbor[1]._id], True)
                 if action is not None:
                     return action
             else:
