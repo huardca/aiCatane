@@ -70,8 +70,10 @@ class JoueurHumain(Joueur):
     def premierTour(self,mappe):
         
         self.premiereColonie = self.trouverMeilleureIntersectionColonie(mappe)
-        self.premiereIntersectionRoute = self.trouverMeilleureIntersectionRoute(self.premiereColonie,mappe)
+        self.premiereIntersectionRoute = self.trouverMeilleureIntersectionRoute(self.premiereColonie,mappe)[0]
 
+        if(self.premiereIntersectionRoute is None):
+            self.premiereIntersectionRoute = self.getLessBadRoad(self.premiereColonie, mappe)
 
         self.ajusterIncomeStats(mappe, self.premiereColonie)
 
@@ -81,7 +83,10 @@ class JoueurHumain(Joueur):
     def deuxiemeTour(self,mappe):
 
         self.deuxiemeColonie = self.trouverMeilleureIntersectionColonie(mappe)
-        self.deuxiemeIntersectionRoute = self.trouverMeilleureIntersectionRoute(self.deuxiemeColonie,mappe)
+        self.deuxiemeIntersectionRoute = self.trouverMeilleureIntersectionRoute(self.deuxiemeColonie,mappe)[0]
+
+        if(self.deuxiemeIntersectionRoute is None):
+            self.deuxiemeIntersectionRoute = self.getLessBadRoad(self.deuxiemeColonie, mappe)
 
         self.ajusterIncomeStats(mappe, self.deuxiemeColonie)
 
@@ -117,7 +122,7 @@ class JoueurHumain(Joueur):
                         return action
             else:
                 print("NO BEST SPOT")
-                action = self.tryBuildBestRoad()
+                action = self.tryBuildBestRoad(mappe)
                 if action is not None:
                     print(action)
                     return action
@@ -148,8 +153,25 @@ class JoueurHumain(Joueur):
     def tryBuildBestCity(self):
         pass
 
-    def tryBuildBestRoad(self):
-        pass
+    def tryBuildBestRoad(self, mappe):
+
+        bestRoad = None
+        bestRoadOrigin = None
+        bestRoadScore = 0
+
+        for i in mappe.obtenirToutesLesIntersections():
+            if mappe._accesRoute(i._id,self._id):
+                potentialRoad = self.trouverMeilleureIntersectionRoute(i, mappe)
+
+                if potentialRoad[1] > bestRoadScore:
+                    bestRoad = potentialRoad[0]
+                    bestRoadScore = potentialRoad[1]
+                    bestRoadOrigin = i
+
+            if bestRoad is not None:
+                return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[bestRoadOrigin._id, bestRoad._id])
+
+        return None
 
     def tryBuildCommodity(self, action, data):
         necessaryResources = []
@@ -163,7 +185,7 @@ class JoueurHumain(Joueur):
         if(action == Action.AJOUTER_VILLE):
             necessaryResources = [2,0,0,3,0]
 
-        ressourceDiff = [x - y for x, y in zip(self._ressources, necessaryResources)]
+        ressourceDiff = [self._ressources[x] - y for x, y in zip(self._ressources, necessaryResources)]
 
         print("RESSOURCE DIFF " + str(action) + " : " + str(ressourceDiff))
 
@@ -184,6 +206,7 @@ class JoueurHumain(Joueur):
         for r in priorityList:
             if(r >= 0):
                 continue
+            print("MISSING " + str(r))
 
             for r2 in priorityList[::-1]:
                 nbTrade = 0
@@ -195,11 +218,16 @@ class JoueurHumain(Joueur):
                     nbTrade = 4
 
                 if nbTrade > 0:
+                    print("CAN TRADE " + str(r2))
                     while(ressourceDiff[r] < 0 and ressourceDiff[r2] >= nbTrade):
+                        print("TRADE " + str(nbTrade) + " " + str(r2) + " for 1 " + str(r))
                         if firstTrade is not None:
                             firstTrade = (Action.ECHANGER_RESSOURCES,[nbTrade, r2, r])
                         ressourceDiff[r] += 1
                         ressourceDiff[r2] -= nbTrade
+                        print("RESSOURCE DIFF: " + str(ressourceDiff))
+
+        print("END: " + str(ressourceDiff))
 
         if not any(t < 0 for t in ressourceDiff):
             return firstTrade
@@ -224,11 +252,15 @@ class JoueurHumain(Joueur):
         if maxScore > 1.5 * self.calculerScoreIntersectionColonie(intersection, mappe):
             return meilleureIntersection
 
+    def getLessBadRoad(self, intersection, mappe):
+        #TODO: Mieux faire ceci
+        return intersection.obtenirVoisins()[0]
+
     def getBestColonySpot(self, mappe):
         maxScore = 0
         meilleureIntersection = None
 
-        for i in [mappe.obtenirIntersection(x) for x in mappe.obtenirNumerosIntersectionsJoueur(self._id)]: #pour toutes les intersections
+        for i in mappe.obtenirToutesLesIntersections(): #pour toutes les intersections
             if mappe.peutConstruireOccupation(i._id, self._id): #si on peut poser une colonie sur l'intersection
                 if not i.occupe():
                     score = self.calculerScoreIntersectionColonie(i, mappe)
@@ -318,10 +350,7 @@ class JoueurHumain(Joueur):
                 bestRoad = i
                 maxRoadScore = scoreRoad
 
-        if bestRoad is None:
-            return intersection.obtenirVoisins()[0]
-
-        return bestRoad
+        return (bestRoad,maxRoadScore)
 
                                         
     def obtenirValeurProductionChiffre(self,chiffre):
