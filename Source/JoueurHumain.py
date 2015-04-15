@@ -98,11 +98,10 @@ class JoueurHumain(Joueur):
 
     def choisirAction(self,mappe,infoJoueurs,paquetCartesVide):
 
-        self.state = self.chooseState()
+        self.state = self.chooseState(mappe)
 
         #TODO: STATES
         if(self.state == State.EXPAND):
-            print("1")
             spot = self.getBestColonySpot(mappe)
             if spot is not None:
                 print ("SPOT: " + str(spot._id))
@@ -131,11 +130,11 @@ class JoueurHumain(Joueur):
                 print(str(action))
                 return action
 
-            #print("TRY CARTE")
-            #action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
-            #if action is not None:
-            #    print(str(action))
-            #    return action
+            print("TRY CARTE")
+            action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
+            if action is not None:
+               print(str(action))
+               return action
 
             if self.peutJouerCarteChevalier():
                 return (Action.JOUER_CARTE_CHEVALIER, [])
@@ -156,11 +155,16 @@ class JoueurHumain(Joueur):
         bestScore = 0
 
         for i in [mappe.obtenirIntersection(x) for x in mappe.obtenirNumerosIntersectionsJoueur(self._id)]:
-            if i.occupation == Occupation.COLONIE:
-                score = self.calculerScoreIntersectionColonie()
+            if i._occupation == Occupation.COLONIE:
+                score = self.calculerScoreIntersectionColonie(i,mappe)
+                print(score)
+
+                if score > bestScore:
+                    bestScore = score
+                    bestCity = i
 
         if bestCity is not None:
-            return (Action.AJOUTER_VILLE, bestCity._id)
+            return self.tryBuildCommodity(Action.AJOUTER_VILLE,[bestCity._id])
 
         return None
 
@@ -185,6 +189,8 @@ class JoueurHumain(Joueur):
         return None
 
     def tryBuildCommodity(self, action, data):
+
+        print("try build " + str(action))
         necessaryResources = []
 
         if(action == Action.AJOUTER_ROUTE):
@@ -287,6 +293,8 @@ class JoueurHumain(Joueur):
                 #return State.MATURE
         elif(self.state == State.MATURE):
             pass
+
+        return self.state
 
 
     def ajusterIncomeStats(self, mappe, intersection):
@@ -897,10 +905,6 @@ class JoueurHumain(Joueur):
     # Deux choix, carte chevalier, voleur
     def pigerRessourceAleatoirement(self):
         super(JoueurHumain, self).pigerRessourceAleatoirement()
-                 
-    # On peut savoir si on gagne avec ca
-    def nombrePointsVictoire(self):
-        super(JoueurHumain, self).nombrePointsVictoire()
             
 
 
