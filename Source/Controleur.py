@@ -321,9 +321,9 @@ class Controleur(object):
             d2 = int(math.ceil(random.random()*6))
             return d1+d2
 
-
 f = file('out.txt', 'w+')
 sys.stdout = f
+
 c = Controleur(['Humain','AI','AI','Humain'])
 c.jouer()
 
