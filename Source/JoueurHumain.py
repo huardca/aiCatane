@@ -108,13 +108,13 @@ class JoueurHumain(Joueur):
                 bestNeighbor = self.getBestNeighbor(spot, mappe)
                 if bestNeighbor is not None:
                     print("BEST NEIGHBOR: " + str(bestNeighbor._id))
-                    action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id])
+                    action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id], True)
                     if action is not None:
                         print(str(action))
                         return action
                 else:
                     print("NO BEST NEIGHBOR")
-                    action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id])
+                    action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id], True)
                     if action is not None:
                         print("BUILD ROAD: " + str(action))
                         return action
@@ -129,6 +129,12 @@ class JoueurHumain(Joueur):
             if action is not None:
                 print(str(action))
                 return action
+
+            print("TRY CARTE")
+            action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
+            if action is not None:
+               print(str(action))
+               return action
 
             self.gererExtra()
         elif self.state == State.MATURE:
@@ -143,13 +149,13 @@ class JoueurHumain(Joueur):
                 bestNeighbor = self.getBestNeighbor(spot, mappe)
                 if bestNeighbor is not None:
                     print("BEST NEIGHBOR: " + str(bestNeighbor._id))
-                    action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id])
+                    action = self.tryBuildCommodity(Action.AJOUTER_ROUTE, [spot._id, bestNeighbor._id], True)
                     if action is not None:
                         print(str(action))
                         return action
                 else:
                     print("NO BEST NEIGHBOR")
-                    action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id])
+                    action = self.tryBuildCommodity(Action.AJOUTER_COLONIE, [spot._id], True)
                     if action is not None:
                         print("BUILD ROAD: " + str(action))
                         return action
@@ -159,14 +165,12 @@ class JoueurHumain(Joueur):
                 if action is not None:
                     print(str(action))
                     return action
+                print("TRY CARTE")
+                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], True)
+                if action is not None:
+                   print(str(action))
+                   return action
 
-
-
-        print("TRY CARTE")
-        action = self.tryBuildCommodity(Action.ACHETER_CARTE, [])
-        if action is not None:
-           print(str(action))
-           return action
 
         if self.peutJouerCarteChevalier():
             return (Action.JOUER_CARTE_CHEVALIER, [])
@@ -193,7 +197,7 @@ class JoueurHumain(Joueur):
                     bestCity = i
 
         if bestCity is not None:
-            return self.tryBuildCommodity(Action.AJOUTER_VILLE,[bestCity._id])
+            return self.tryBuildCommodity(Action.AJOUTER_VILLE,[bestCity._id], True)
 
         return None
 
@@ -213,11 +217,11 @@ class JoueurHumain(Joueur):
                     bestRoadOrigin = i
 
             if bestRoad is not None:
-                return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[bestRoadOrigin._id, bestRoad._id])
+                return self.tryBuildCommodity(Action.AJOUTER_ROUTE,[bestRoadOrigin._id, bestRoad._id], True)
 
         return None
 
-    def tryBuildCommodity(self, action, data):
+    def tryBuildCommodity(self, action, data, trade):
 
         print("try build " + str(action))
         necessaryResources = []
@@ -238,6 +242,9 @@ class JoueurHumain(Joueur):
                 return action
             else:
                 return (action,data)
+
+        if(not trade):
+            return None
 
         priorityList = self.priorityList()
 
@@ -318,9 +325,10 @@ class JoueurHumain(Joueur):
 
         if(self.state == State.EXPAND):
             if len(mappe.obtenirNumerosIntersectionsJoueur(self._id)) >= 4:
-                return State.MATURE
+                self.state = State.MATURE
         elif(self.state == State.MATURE):
             pass
+
 
         return self.state
 
@@ -455,6 +463,8 @@ class JoueurHumain(Joueur):
 
     def jouerVoleurs(self,mappe,infoJoueurs):
 
+        return (0,0)
+
         max = 0
         maxPlayer = 0
 
@@ -493,432 +503,6 @@ class JoueurHumain(Joueur):
                 maxInt = key
 
         return (maxInt,maxPlayer)  # Retourne une paire non valide
-
-    def deciderCommerce(self):
-
-        ressourceEnManque = self.ressourceEnManque()
-
-        if ressourceEnManque != False:
-
-            if ressourceEnManque == Ressource.BOIS:
-
-                if self.choisirEchange(Ressource.MINERAL, Ressource.BOIS) != False:
-                    return self.choisirEchange(Ressource.MINERAL,Ressource.BOIS)
-
-                if self.choisirEchange(Ressource.LAINE, Ressource.BOIS) != False:
-                    return self.choisirEchange(Ressource.LAINE, Ressource.BOIS)
-
-                if self.choisirEchange(Ressource.BLE, Ressource.BOIS) != False:
-                    return self.choisirEchange(Ressource.BLE, Ressource.BOIS)
-
-                if self.choisirEchange(Ressource.ARGILE, Ressource.BOIS) != False:
-                    return self.choisirEchange(Ressource.ARGILE, Ressource.BOIS)
-
-                return False
-
-            elif ressourceEnManque == Ressource.ARGILE:
-
-                if self.choisirEchange(Ressource.MINERAL, Ressource.ARGILE) != False:
-                    return self.choisirEchange(Ressource.MINERAL,Ressource.ARGILE)
-
-                if self.choisirEchange(Ressource.LAINE, Ressource.ARGILE) != False:
-                    return self.choisirEchange(Ressource.LAINE, Ressource.ARGILE)
-
-                if self.choisirEchange(Ressource.BLE, Ressource.ARGILE) != False:
-                    return self.choisirEchange(Ressource.BLE, Ressource.ARGILE)
-
-                if self.choisirEchange(Ressource.BOIS, Ressource.ARGILE) != False:
-                    return self.choisirEchange(Ressource.BOIS, Ressource.ARGILE)
-
-                return False
-
-            elif ressourceEnManque == Ressource.MINERAL:
-
-                if self.choisirEchange(Ressource.BOIS, Ressource.MINERAL) != False:
-                    return self.choisirEchange(Ressource.BOIS,Ressource.MINERAL)
-
-                if self.choisirEchange(Ressource.ARGILE, Ressource.MINERAL) != False:
-                    return self.choisirEchange(Ressource.ARGILE, Ressource.MINERAL)
-
-                return False
-
-
-            elif ressourceEnManque == Ressource.BLE:
-
-                if self.choisirEchange(Ressource.BOIS, Ressource.BLE) != False:
-                    return self.choisirEchange(Ressource.BOIS, Ressource.BLE)
-
-                if self.choisirEchange(Ressource.LAINE, Ressource.BLE) != False:
-                    return self.choisirEchange(Ressource.LAINE, Ressource.BLE)
-
-                if self.choisirEchange(Ressource.ARGILE, Ressource.BLE) != False:
-                    return self.choisirEchange(Ressource.ARGILE, Ressource.BLE)
-
-                if self.choisirEchange(Ressource.MINERAL, Ressource.BLE) != False:
-                    return self.choisirEchange(Ressource.MINERAL, Ressource.BLE)
-
-                return False
-
-            elif ressourceEnManque == Ressource.LAINE:
-
-                if self.choisirEchange(Ressource.MINERAL, Ressource.LAINE) != False:
-                    return self.choisirEchange(Ressource.MINERAL, Ressource.LAINE)
-
-                if self.choisirEchange(Ressource.ARGILE, Ressource.LAINE) != False:
-                    return self.choisirEchange(Ressource.ARGILE, Ressource.LAINE)
-
-                return False
-
-        return False
-
-
-    def ressourceEnManque(self):
-
-        if self.quantiteRessources(Ressource.BLE) == 0:
-            return Ressource.BLE
-        if self.quantiteRessources(Ressource.ARGILE) == 0:
-            return Ressource.ARGILE
-        if self.quantiteRessources(Ressource.BOIS) == 0:
-            return Ressource.BOIS
-        if self.quantiteRessources(Ressource.LAINE) == 0:
-            return Ressource.LAINE
-        if self.quantiteRessources(Ressource.MINERAL) == 0:
-            return Ressource.MINERAL
-
-
-        return False
-
-
-    def choisirEchange(self,ressourceOfferte,ressourceDemandee):
-
-        if self.quantiteRessources(ressourceOfferte) < 2:
-            return False
-
-        elif self.quantiteRessources(ressourceOfferte) == 2:
-
-            if ressourceOfferte in self._peutEchanger:
-                return [2, ressourceOfferte, ressourceDemandee]
-
-        elif self.quantiteRessources(ressourceOfferte) >= 3 and self.quantiteRessources(ressourceOfferte) < 5:
-
-            if ressourceOfferte in self._peutEchanger:
-                return [2, ressourceOfferte, ressourceDemandee]
-
-            if self._possedePortGenerique:
-                return [3, ressourceOfferte, ressourceDemandee]
-
-
-        elif self.quantiteRessources(ressourceOfferte) >= 5:
-
-            if ressourceOfferte in self._peutEchanger:
-                return [2, ressourceOfferte, ressourceDemandee]
-
-            if self._possedePortGenerique:
-                return [3, ressourceOfferte, ressourceDemandee]
-
-            return [4, ressourceOfferte, ressourceDemandee]
-
-
-        return False
-
-    def echangesPossibles(self):
-
-        echangesPossibles = []
-
-
-        if self._peutEchanger:
-
-
-            if Ressource.BOIS in self._peutEchanger:
-
-                if self.quantiteRessources(Ressource.BOIS) >= 2:
-                    echangesPossibles.append([2, Ressource.BOIS, Ressource.ARGILE])
-                    echangesPossibles.append([2, Ressource.BOIS, Ressource.MINERAL])
-                    echangesPossibles.append([2, Ressource.BOIS, Ressource.BLE])
-                    echangesPossibles.append([2, Ressource.BOIS, Ressource.LAINE])
-
-            if Ressource.ARGILE in self._peutEchanger:
-
-                if self.quantiteRessources(Ressource.ARGILE) >= 2:
-                    echangesPossibles.append([2, Ressource.ARGILE, Ressource.BOIS])
-                    echangesPossibles.append([2, Ressource.ARGILE, Ressource.MINERAL])
-                    echangesPossibles.append([2, Ressource.ARGILE, Ressource.BLE])
-                    echangesPossibles.append([2, Ressource.ARGILE, Ressource.LAINE])
-
-            if Ressource.MINERAL in self._peutEchanger:
-
-                if self.quantiteRessources(Ressource.MINERAL) >= 2:
-                    echangesPossibles.append([2, Ressource.MINERAL, Ressource.BOIS])
-                    echangesPossibles.append([2, Ressource.MINERAL, Ressource.ARGILE])
-                    echangesPossibles.append([2, Ressource.MINERAL, Ressource.BLE])
-                    echangesPossibles.append([2, Ressource.MINERAL, Ressource.LAINE])
-
-            if Ressource.BLE in self._peutEchanger:
-
-                if self.quantiteRessources(Ressource.BLE) >= 2:
-                    echangesPossibles.append([2, Ressource.BLE, Ressource.BOIS])
-                    echangesPossibles.append([2, Ressource.BLE, Ressource.ARGILE])
-                    echangesPossibles.append([2, Ressource.BLE, Ressource.MINERAL])
-                    echangesPossibles.append([2, Ressource.BLE, Ressource.LAINE])
-
-            if Ressource.LAINE in self._peutEchanger:
-
-                if self.quantiteRessources(Ressource.LAINE) >= 2:
-                    echangesPossibles.append([2, Ressource.LAINE, Ressource.BOIS])
-                    echangesPossibles.append([2, Ressource.LAINE, Ressource.ARGILE])
-                    echangesPossibles.append([2, Ressource.LAINE, Ressource.MINERAL])
-                    echangesPossibles.append([2, Ressource.LAINE, Ressource.BLE])
-
-
-        if self._possedePortGenerique:
-
-            if self.quantiteRessources(Ressource.BOIS) >= 3:
-                echangesPossibles.append([3, Ressource.BOIS, Ressource.ARGILE])
-                echangesPossibles.append([3, Ressource.BOIS, Ressource.MINERAL])
-                echangesPossibles.append([3, Ressource.BOIS, Ressource.BLE])
-                echangesPossibles.append([3, Ressource.BOIS, Ressource.LAINE])
-
-            if self.quantiteRessources(Ressource.ARGILE) >= 3:
-                echangesPossibles.append([3, Ressource.ARGILE, Ressource.BOIS])
-                echangesPossibles.append([3, Ressource.ARGILE, Ressource.MINERAL])
-                echangesPossibles.append([3, Ressource.ARGILE, Ressource.BLE])
-                echangesPossibles.append([3, Ressource.ARGILE, Ressource.LAINE])
-
-            if self.quantiteRessources(Ressource.MINERAL) >= 3:
-                echangesPossibles.append([3, Ressource.MINERAL, Ressource.BOIS])
-                echangesPossibles.append([3, Ressource.MINERAL, Ressource.ARGILE])
-                echangesPossibles.append([3, Ressource.MINERAL, Ressource.BLE])
-                echangesPossibles.append([3, Ressource.MINERAL, Ressource.LAINE])
-
-            if self.quantiteRessources(Ressource.BLE) >= 3:
-                echangesPossibles.append([3, Ressource.BLE, Ressource.BOIS])
-                echangesPossibles.append([3, Ressource.BLE, Ressource.ARGILE])
-                echangesPossibles.append([3, Ressource.BLE, Ressource.MINERAL])
-                echangesPossibles.append([3, Ressource.BLE, Ressource.LAINE])
-
-            if self.quantiteRessources(Ressource.LAINE) >= 3:
-                echangesPossibles.append([3, Ressource.LAINE, Ressource.BOIS])
-                echangesPossibles.append([3, Ressource.LAINE, Ressource.ARGILE])
-                echangesPossibles.append([3, Ressource.LAINE, Ressource.MINERAL])
-                echangesPossibles.append([3, Ressource.LAINE, Ressource.BLE])
-
-
-        if self.quantiteRessources(Ressource.BOIS) >= 4:
-            echangesPossibles.append([4, Ressource.BOIS, Ressource.ARGILE])
-            echangesPossibles.append([4, Ressource.BOIS, Ressource.MINERAL])
-            echangesPossibles.append([4, Ressource.BOIS, Ressource.BLE])
-            echangesPossibles.append([4, Ressource.BOIS, Ressource.LAINE])
-
-        if self.quantiteRessources(Ressource.ARGILE) >= 4:
-            echangesPossibles.append([4, Ressource.ARGILE, Ressource.BOIS])
-            echangesPossibles.append([4, Ressource.ARGILE, Ressource.MINERAL])
-            echangesPossibles.append([4, Ressource.ARGILE, Ressource.BLE])
-            echangesPossibles.append([4, Ressource.ARGILE, Ressource.LAINE])
-
-        if self.quantiteRessources(Ressource.MINERAL) >= 4:
-            echangesPossibles.append([4, Ressource.MINERAL, Ressource.BOIS])
-            echangesPossibles.append([4, Ressource.MINERAL, Ressource.ARGILE])
-            echangesPossibles.append([4, Ressource.MINERAL, Ressource.BLE])
-            echangesPossibles.append([4, Ressource.MINERAL, Ressource.LAINE])
-
-        if self.quantiteRessources(Ressource.BLE) >= 4:
-            echangesPossibles.append([4, Ressource.BLE, Ressource.BOIS])
-            echangesPossibles.append([4, Ressource.BLE, Ressource.ARGILE])
-            echangesPossibles.append([4, Ressource.BLE, Ressource.MINERAL])
-            echangesPossibles.append([4, Ressource.BLE, Ressource.LAINE])
-
-        if self.quantiteRessources(Ressource.LAINE) >= 4:
-            echangesPossibles.append([4, Ressource.LAINE, Ressource.BOIS])
-            echangesPossibles.append([4, Ressource.LAINE, Ressource.ARGILE])
-            echangesPossibles.append([4, Ressource.LAINE, Ressource.MINERAL])
-            echangesPossibles.append([4, Ressource.LAINE, Ressource.BLE])
-
-
-        if echangesPossibles:
-            return echangesPossibles
-
-        return False
-
-
-
-    def deciderConstructionAchat(self,mappe):
-
-
-        if not self._peutEchanger:
-            if not self._possedePortGenerique:
-                versPort = self.allerVersPort(mappe)
-
-                if versPort != False:
-                    return versPort
-
-        self.constructionOuAchat = "VILLE"
-
-        futureVille = self.choisirFutureVille(mappe)
-
-        if futureVille != False:
-            return futureVille._id
-
-        self.constructionOuAchat = "COLONIE"
-
-        futureColonie = self.choisirFutureColonie(mappe)
-
-        if futureColonie != False:
-            return futureColonie._id
-
-        self.constructionOuAchat = "ROUTE"
-        futureRoute = self.choisirFutureRoute(mappe)
-
-        if futureRoute != False:
-            return futureRoute
-
-        self.constructionOuAchat = "ACHETER CARTE"
-
-        if self.possibleAcheterCarte():
-            return (Action.ACHETER_CARTE,[])
-
-        self.constructionOuAchat = "RIEN"
-
-        return False
-
-
-
-    def choisirFutureVille(self,mappe):
-
-        colonies = self.possibleAjouterVille(mappe)
-        meilleureValeurProduction = 0
-        futureVille = 0
-
-        if colonies != False:
-
-            for i in colonies:
-
-                valeurProduction = 0      #demarche pour trouver la meilleure valeur de production
-
-                for t in i.obtenirTerritoiresVoisins():
-                    valeurProduction += self.obtenirValeurProductionChiffre(t._valeur)
-
-                if valeurProduction > meilleureValeurProduction:
-                    meilleureValeurProduction = valeurProduction
-                    futureVille = i._id
-
-            return futureVille
-
-        return False
-
-
-
-    def possibleAjouterVille(self,mappe):
-
-        colonies = []
-
-        if self.quantiteRessources(Ressource.BLE) >= 2 and self.quantiteRessources(Ressource.MINERAL) >= 3:
-            for i in mappe.obtenirToutesLesIntersections():
-                if i.occupe() and i.obtenirOccupant() == self._id and i.occupation() == 1:
-                    colonies.append(i)
-
-        if colonies:
-            return colonies
-
-        else:
-            return False
-
-
-
-    def choisirFutureColonie(self,mappe):
-
-        possiblesIntersections = self.possibleAjouterColonie(mappe)
-
-        meilleureValeurProduction = 0
-        futureColonie = 0
-
-        if possiblesIntersections != False:
-
-            for i in possiblesIntersections:
-
-                valeurProduction = 0
-
-                for t in i.obtenirTerritoiresVoisins():
-                    valeurProduction += self.obtenirValeurProductionChiffre(t._valeur)
-
-                if valeurProduction > meilleureValeurProduction:
-                    meilleureValeurProduction = valeurProduction
-                    futureColonie = i._id
-
-            if futureColonie != 0:
-                return futureColonie
-
-        return False
-
-
-
-    def possibleAjouterColonie(self,mappe):
-
-        possiblesIntersections = []
-
-        if self.quantiteRessources(Ressource.BLE) >= 1 and self.quantiteRessources(Ressource.ARGILE) >= 1 and self.quantiteRessources(Ressource.BOIS) >= 1 and self.quantiteRessources(Ressource.LAINE) >= 1:
-            for i in mappe.obtenirToutesLesIntersections():
-                if mappe.peutConstruireOccupation(i._id,self._id):
-                    if not i.occupe():
-                        if i!=None:
-                            possiblesIntersections.append(i)
-
-        if possiblesIntersections:
-            return possiblesIntersections
-
-        return False
-
-
-
-    def choisirFutureRoute(self,mappe):
-
-        possiblesRoutes = []
-        meilleureValeurProduction = 0
-        futureRoute = 0
-
-        if self.possibleAjouterRoute(mappe):
-            for i in mappe.obtenirToutesLesIntersections():
-                if mappe._accesRoute(i._id,self._id):
-                    for j in i.obtenirVoisins():
-                        if mappe.peutConstruireRoute(i._id,j._id,self._id):
-                            if not mappe.intersectionPossedeRoute(i._id,j._id):
-                                possiblesRoutes.append([i._id,j._id])
-
-        if possiblesRoutes:
-
-            for r in possiblesRoutes:
-
-                valeurProduction = 0
-
-                for t in r[1].obtenirTerritoiresVoisins():
-                    valeurProduction += self.obtenirValeurProductionChiffre(t._valeur)
-
-                if valeurProduction > meilleureValeurProduction:
-                    meilleureValeurProduction = valeurProduction
-                    futureRoute = [r[0],r[1]]
-
-            return futureRoute
-
-
-        return False
-
-
-
-
-    def possibleAjouterRoute(self,mappe):
-
-        emplacementsPossibles = []
-
-        if self.quantiteRessources(Ressource.BOIS) >= 1 and self.quantiteRessources(Ressource.ARGILE) >= 1:
-            for i in mappe.obtenirToutesLesIntersections():
-                for j in i.obtenirVoisins():
-                    if mappe.peutConstruireRoute(i._id,j._id,self._id):
-                        if [j._id,i._id] not in emplacementsPossibles:
-                            emplacementsPossibles.append([i._id,j._id])
-
-        if emplacementsPossibles:
-            return emplacementsPossibles
-
-        return False
 
 
     def possibleAcheterCarte(self):
