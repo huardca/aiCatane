@@ -23,7 +23,9 @@ from Mappe import *
 from Cartes import *
 from FabriqueJoueur import *
 from Action import *
-from multiprocessing import Process
+from multiprocessing import Process, Pipe, Lock
+
+from Sender import *
 
 fabrique = FabriqueJoueur()
 
@@ -344,7 +346,7 @@ class Controleur(object):
 
 
 
-def runner(initConfig, parameter, fixval, min, max, step):
+def runner(initConfig, parameter, fixval, min, max, step, lock, write_pipe):
 
     config = copy.deepcopy(initConfig)
     config[0] = fixval
@@ -365,7 +367,7 @@ def runner(initConfig, parameter, fixval, min, max, step):
             while config[3] <= max:
                 begin = time.mktime(time.gmtime())
                 while config[4] <= max:
-                    run_config(config)
+                    run_config(config, lock, write_pipe)
                     # print "running config", config
                     config[4] += step
                     it += 1
@@ -394,7 +396,7 @@ def runner(initConfig, parameter, fixval, min, max, step):
 
 
 
-def run_config(resourceValues):
+def run_config(resourceValues, lock, write_pipe):
     for z in range(5):
         # Game loop
         c = Controleur(['Humain','AI','AI','AI'])
@@ -412,28 +414,14 @@ def run_config(resourceValues):
         info = c.obtenirInfoJoueurs()
         print info
 
-        for i in info:
-            if i[1]:
-                # Save to database
-                url = 'http://step.polymtl.ca/~alexrose/catane/catane.php?b='
-                url += str(resourceValues[0])
-                url += '&a='
-                url += str(resourceValues[1])
-                url += '&w='
-                url += str(resourceValues[2])
-                url += '&m='
-                url += str(resourceValues[3])
-                url += '&l='
-                url += str(resourceValues[4])
-                url += '&s='
-                url += str(i[2])
-                url += '&results='
-                url += urllib.quote(str(info))
+        push_data(resourceValues, info, lock, write_pipe)
 
-                response = urllib2.urlopen(url)
-                html = response.read()
-                response.close()
+def push_data(val, info, lock, write_pipe):
+    lock.acquire()
+    write_pipe.send((val, info))
+    lock.release()
 
+# f = file('out.txt', 'w+')
 f = file(os.devnull, 'w+')
 console_handle = sys.stdout
 sys.stdout = f
@@ -442,6 +430,12 @@ resourceValues = [0.8, 0.8, 0.8, 0.8, 0.8]
 
 if __name__ == '__main__':
 
+    # Create communicating pipe and sync mechanism
+    write_pipe, read_pipe = Pipe()
+    lock = Lock()
+    sender = Process(target=sender_proc, args=(read_pipe,))
+    sender.start()
+
     min = 0.7
     max = 1.3
     step = 0.1
@@ -449,14 +443,14 @@ if __name__ == '__main__':
     cur = min
 
     while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1,))
+        proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
         proc.start()
 
         cur += step
 
     cur = min
     while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1,))
+        proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1, lock, write_pipe,))
         proc.start()
 
         cur += step
