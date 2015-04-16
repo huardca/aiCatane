@@ -58,7 +58,7 @@ class JoueurHumain(Joueur):
         self.state = State.EXPAND
 
         self.incomeStats = [0.0, 0.0, 0.0, 0.0, 0.0]
-        self.resourceValues = [1, 1.2, 1.1, 0.9, 0.8] #BLÉ, ARGILE, BOIS, MINÉRAL, LAINE
+        # self.resourceValues = [1, 1.2, 1.1, 0.9, 0.8] #BLÉ, ARGILE, BOIS, MINÉRAL, LAINE
 
         #tableau des valeurs des actions
         self.valeursActions = [self.valeurActionEchanger, self.valeurActionVille, self.valeurActionColonie, self.valeurActionRoute, self.valeurActionAcheterCarte, self.valeurActionJouerCarteChevalier]
@@ -68,6 +68,8 @@ class JoueurHumain(Joueur):
 
         self.estHumain = True
 
+    def setValues(self, values):
+        self.resourceValues = values
 
     def premierTour(self,mappe):
         
@@ -887,11 +889,11 @@ class JoueurHumain(Joueur):
     # Se fait voler une carte
     # Deux choix, carte chevalier, voleur
     def pigerRessourceAleatoirement(self):
-        super(JoueurHumain, self).pigerRessourceAleatoirement()
+        return super(JoueurHumain, self).pigerRessourceAleatoirement()
 
     # On peut savoir si on gagne avec ca
     def nombrePointsVictoire(self):
-        super(JoueurHumain, self).nombrePointsVictoire()
+        return super(JoueurHumain, self).nombrePointsVictoire()
             
 
 

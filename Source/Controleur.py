@@ -13,11 +13,15 @@ import sys
 import getopt
 import random
 import math
+import urllib
+import urllib2
+import copy
 from Joueur import *
 from Mappe import *
 from Cartes import *
 from FabriqueJoueur import *
 from Action import *
+from multiprocessing import Process
 
 fabrique = FabriqueJoueur()
 
@@ -321,26 +325,125 @@ class Controleur(object):
             d2 = int(math.ceil(random.random()*6))
             return d1+d2
 
+    def setValuesForAI(self, joueur, values):
+        self._joueurs[joueur].setValues(values)
 
     def obtenirInfoJoueurs(self):
         a = []
         for joueur in self._joueurs:
             a.append((joueur.id(),
                       joueur.estHumain,
-                      joueur.nombrePointsVictoireVisibles(),
+                      joueur.nombrePointsVictoire(),
                       joueur.nombreCartesRessources(),
                       joueur.nombreChevaliers()
             ))
 
         return a
 
+
+
+def runner(initConfig, parameter, fixval, min, max, step):
+
+    config = copy.deepcopy(initConfig)
+    config[0] = fixval
+
+    parameters = range(5)
+
+    parameters.remove(parameter)
+
+    while config[1] <= max:
+        while config[2] <= max:
+            while config[3] <= max:
+                while config[4] <= max:
+                    run_config(config)
+                    # print "running config", config
+                    config[4] += step
+                config[4] = min
+                config[3] += step
+            config[3] = min
+            config[2] += step
+        config[2] = min
+        config[1] += step
+
+
+
+def run_config(resourceValues):
+    for z in range(5):
+        # Game loop
+        c = Controleur(['Humain','AI','AI','AI'])
+
+        # Set values for each humain
+        info = c.obtenirInfoJoueurs()
+        for i in info:
+            if i[1]:
+                c.setValuesForAI(i[0], resourceValues)
+
+        # Play
+        c.jouer()
+
+        # Get results
+        info = c.obtenirInfoJoueurs()
+        print info
+
+        for i in info:
+            if i[1]:
+                # Save to database
+                url = 'http://step.polymtl.ca/~alexrose/catane/catane.php?b='
+                url += str(resourceValues[0])
+                url += '&a='
+                url += str(resourceValues[1])
+                url += '&w='
+                url += str(resourceValues[2])
+                url += '&m='
+                url += str(resourceValues[3])
+                url += '&l='
+                url += str(resourceValues[4])
+                url += '&s='
+                url += str(i[2])
+                url += '&results='
+                url += urllib.quote(str(info))
+
+                response = urllib2.urlopen(url)
+                html = response.read()
+                response.close()
+
 f = file('out.txt', 'w+')
-sys.stdout = f
+# sys.stdout = f
 
-c = Controleur(['Humain','AI','AI','Humain'])
-c.jouer()
+resourceValues = [0.8, 0.8, 0.8, 0.8, 0.8]
 
-print c.obtenirInfoJoueurs()
+if __name__ == '__main__':
+    proc1 = Process(target=runner, args=(resourceValues, 0, 0.9, 0.9, 1.0, 0.1,))
+    proc1.start()
+
+    proc2 = Process(target=runner, args=(resourceValues, 0, 1.0, 0.9, 1.0, 0.1,))
+    proc2.start()
+
+    proc3 = Process(target=runner, args=(resourceValues, 0, 1.1, 0.9, 1.0, 0.1,))
+    proc3.start()
+
+    proc4 = Process(target=runner, args=(resourceValues, 0, 0.8, 0.9, 1.0, 0.1,))
+    proc4.start()
+
+    proc5 = Process(target=runner, args=(resourceValues, 0, 1.2, 0.9, 1.0, 0.1,))
+    proc5.start()
+
+    proc6 = Process(target=runner, args=(resourceValues, 0, 0.8, 1.1, 1.2, 0.1,))
+    proc6.start()
+
+    proc7 = Process(target=runner, args=(resourceValues, 0, 0.9, 1.1, 1.2, 0.1,))
+    proc7.start()
+
+    proc8 = Process(target=runner, args=(resourceValues, 0, 1.0, 1.1, 1.2, 0.1,))
+    proc8.start()
+
+    proc9 = Process(target=runner, args=(resourceValues, 0, 1.1, 1.1, 1.2, 0.1,))
+    proc9.start()
+
+    proc10 = Process(target=runner, args=(resourceValues, 0, 1.2, 1.1, 1.2, 0.1,))
+    proc10.start()
+
+    raw_input("Press Enter to quit...")
 
 f.close()
 
