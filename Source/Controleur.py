@@ -337,7 +337,7 @@ class Controleur(object):
 f = file('out.txt', 'w+')
 sys.stdout = f
 
-c = Controleur(['Humain','AI','AI','Humain'])
+c = Controleur(['Humain','AI','AI','AI'])
 c.jouer()
 
 print c.obtenirInfoJoueurs()
