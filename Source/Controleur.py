@@ -16,6 +16,8 @@ import math
 import urllib
 import urllib2
 import copy
+import os
+import time
 from Joueur import *
 from Mappe import *
 from Cartes import *
@@ -351,15 +353,40 @@ def runner(initConfig, parameter, fixval, min, max, step):
 
     parameters.remove(parameter)
 
+    pid = os.getpid()
+    it = 0
+
+    nbSteps = (max + step - min) / step
+
+    totalSteps = math.pow(nbSteps, 4)
+
     while config[1] <= max:
         while config[2] <= max:
             while config[3] <= max:
+                begin = time.mktime(time.gmtime())
                 while config[4] <= max:
                     run_config(config)
                     # print "running config", config
                     config[4] += step
+                    it += 1
+                    # console_handle.write("Process " + str(pid) + " running iteration " + str(it) + os.linesep)
                 config[4] = min
                 config[3] += step
+
+                end = time.mktime(time.gmtime())
+
+                diff = end - begin
+
+                eta = diff * math.pow(nbSteps, 3)
+                pcent = it / totalSteps * 100
+
+                remaining = eta - eta * it / totalSteps
+
+                console_handle.write("Took " + str(diff) + " seconds to complete " + str(nbSteps) + os.linesep)
+                console_handle.write("Total ETA " + str(eta) + os.linesep)
+                console_handle.write("ETA " + str(remaining) + os.linesep)
+                console_handle.write("Progress " + str(math.floor(pcent)) + "%" + os.linesep)
+
             config[3] = min
             config[2] += step
         config[2] = min
@@ -407,44 +434,33 @@ def run_config(resourceValues):
                 html = response.read()
                 response.close()
 
-f = file('out.txt', 'w+')
-# sys.stdout = f
+f = file(os.devnull, 'w+')
+console_handle = sys.stdout
+sys.stdout = f
 
 resourceValues = [0.8, 0.8, 0.8, 0.8, 0.8]
 
 if __name__ == '__main__':
-    proc1 = Process(target=runner, args=(resourceValues, 0, 0.9, 0.9, 1.0, 0.1,))
-    proc1.start()
 
-    proc2 = Process(target=runner, args=(resourceValues, 0, 1.0, 0.9, 1.0, 0.1,))
-    proc2.start()
+    min = 0.7
+    max = 1.3
+    step = 0.1
 
-    proc3 = Process(target=runner, args=(resourceValues, 0, 1.1, 0.9, 1.0, 0.1,))
-    proc3.start()
+    cur = min
 
-    proc4 = Process(target=runner, args=(resourceValues, 0, 0.8, 0.9, 1.0, 0.1,))
-    proc4.start()
+    while(cur <= max):
+        proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1,))
+        proc.start()
 
-    proc5 = Process(target=runner, args=(resourceValues, 0, 1.2, 0.9, 1.0, 0.1,))
-    proc5.start()
+        cur += step
 
-    proc6 = Process(target=runner, args=(resourceValues, 0, 0.8, 1.1, 1.2, 0.1,))
-    proc6.start()
+    cur = min
+    while(cur <= max):
+        proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1,))
+        proc.start()
 
-    proc7 = Process(target=runner, args=(resourceValues, 0, 0.9, 1.1, 1.2, 0.1,))
-    proc7.start()
-
-    proc8 = Process(target=runner, args=(resourceValues, 0, 1.0, 1.1, 1.2, 0.1,))
-    proc8.start()
-
-    proc9 = Process(target=runner, args=(resourceValues, 0, 1.1, 1.1, 1.2, 0.1,))
-    proc9.start()
-
-    proc10 = Process(target=runner, args=(resourceValues, 0, 1.2, 1.1, 1.2, 0.1,))
-    proc10.start()
-
-    # raw_input("Press Enter to quit...")
-
-f.close()
+        cur += step
 
 
+    raw_input("Press Enter to quit...")
+    f.close()
