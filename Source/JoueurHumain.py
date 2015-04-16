@@ -552,7 +552,7 @@ class JoueurHumain(Joueur):
     # Se fait voler une carte
     # Deux choix, carte chevalier, voleur
     def pigerRessourceAleatoirement(self):
-        super(JoueurHumain, self).pigerRessourceAleatoirement()
+        return super(JoueurHumain, self).pigerRessourceAleatoirement()
 
     def expand(self, mappe):
         spot = self.getBestColonySpot(mappe)
