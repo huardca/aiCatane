@@ -443,7 +443,7 @@ if __name__ == '__main__':
     proc10 = Process(target=runner, args=(resourceValues, 0, 1.2, 1.1, 1.2, 0.1,))
     proc10.start()
 
-    raw_input("Press Enter to quit...")
+    # raw_input("Press Enter to quit...")
 
 f.close()
 
