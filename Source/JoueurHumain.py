@@ -5,10 +5,6 @@
 from Joueur import *
 from Mappe import *
 
-class Strategy:
-    ROADS = 0
-    CITIES = 1
-
 class State:
     EXPAND = 0
     MATURE = 1
@@ -51,7 +47,6 @@ class JoueurHumain(Joueur):
         self.deuxiemeColonie = {}
         self.deuxiemeIntersectionRoute = {}
 
-        self.strategy = Strategy.ROADS
         self.state = State.EXPAND
 
         self.incomeStats = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -79,10 +74,6 @@ class JoueurHumain(Joueur):
             self.deuxiemeIntersectionRoute = self.getLessBadRoad(self.deuxiemeColonie, mappe)
 
         self.ajusterIncomeStats(mappe, self.deuxiemeColonie)
-
-        if self.incomeStats[Ressource.MINERAL] + self.incomeStats[Ressource.BLE] > \
-                        self.incomeStats[Ressource.ARGILE] + self.incomeStats[Ressource.BOIS]:
-            self.strategy = Strategy.CITIES
 
         return (self.deuxiemeColonie._id,self.deuxiemeIntersectionRoute._id)
 
@@ -411,7 +402,9 @@ class JoueurHumain(Joueur):
             newIncome[r] *= SPEC_MULTIPLIER
 
         for idx, r in enumerate(newIncome):
-            score += r * genericMultiplier - self.incomeStats[idx] * (GEN_MULTIPLIER if self._possedePortGenerique else 1)
+            newIncomeScore = r * genericMultiplier * self.resourceValues[idx]
+            oldIncomeScore = self.incomeStats[idx] * self.resourceValues[idx] * (GEN_MULTIPLIER if self._possedePortGenerique else 1)
+            score += newIncomeScore - oldIncomeScore
 
         return score
 
