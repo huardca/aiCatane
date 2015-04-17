@@ -41,6 +41,9 @@ class JoueurHumain(Joueur):
 
         print "HUMAIN: " + str(id)
 
+        self.buyingCard = False
+        self.buyingCardRessources = []
+        self.emptyDeck = False
 
         self.premiereColonie = {}
         self.premiereIntersectionRoute = {}
@@ -79,6 +82,9 @@ class JoueurHumain(Joueur):
 
 
     def choisirAction(self,mappe,infoJoueurs,paquetCartesVide):
+
+        if self.buyingCard and set(self.buyingCardRessources) == set(self._ressources):
+            self.emptyDeck = True
 
         self.state = self.chooseState(mappe)
 
@@ -134,7 +140,7 @@ class JoueurHumain(Joueur):
         if self.favorRoad(mappe, infoJoueurs):
             if self.shouldBuildRoad(mappe):
                 print("BUILD LONGEST ROAD")
-                action = self.tryBuildBestRoad(mappe, True)
+                action = self.tryBuildBestRoad(mappe, self.state <> State.EXPAND)
                 if action is not None:
                     return action
             if self.shouldBuyCard(mappe, infoJoueurs):
@@ -145,12 +151,12 @@ class JoueurHumain(Joueur):
         else:
             if self.shouldBuyCard(mappe, infoJoueurs):
                 print("TRY CARTE")
-                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
+                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], True)
                 if action is not None:
                    return action
             if self.shouldBuildRoad(mappe):
                 print("BUILD LONGEST ROAD")
-                action = self.tryBuildBestRoad(mappe, True)
+                action = self.tryBuildBestRoad(mappe, False)
                 if action is not None:
                     return action
         return None
@@ -240,12 +246,17 @@ class JoueurHumain(Joueur):
             necessaryResources = [1,1,1,0,1]
         if(action == Action.ACHETER_CARTE):
             necessaryResources = [1,0,0,1,1]
+            if self.emptyDeck:
+                return None
         if(action == Action.AJOUTER_VILLE):
             necessaryResources = [2,0,0,3,0]
 
         ressourceDiff = [self._ressources[x] - y for x, y in zip(self._ressources, necessaryResources)]
 
         if not any(t < 0 for t in ressourceDiff):
+            if action == Action.ACHETER_CARTE:
+                self.buyingCard = True
+                self.buyingCardRessources = dict(self._ressources)
             if data is None:
                 return action
             else:
