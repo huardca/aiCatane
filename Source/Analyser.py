@@ -111,7 +111,10 @@ def print_stats(wins, games):
         win_ratio_laine[key] = Decimal(laine[key]) / Decimal(total_laine[key])
 
     for key, val in total_configs.iteritems():
-        win_ratio_configs[key] = Decimal(configs[key]) / Decimal(total_configs[key])
+        try:
+            win_ratio_configs[key] = Decimal(configs[key]) / Decimal(total_configs[key])
+        except Exception:
+            print 'oups'
 
     sorted_bois = sorted(bois.items(), key=operator.itemgetter(1), reverse=True)
     sorted_ble = sorted(ble.items(), key=operator.itemgetter(1), reverse=True)
@@ -167,10 +170,19 @@ db = connection.alexrose
 # print_stats(wins, games)
 
 # Print stats - catane2
-total = db.catane2.count()
+# total = db.catane2.count()
+# print "Total entries :", total
+#
+# wins = db.catane2.find({'score': {'$in': ["10","11","12","13","14","15"]}})
+# games = db.catane2.find()
+#
+# print_stats(wins, games)
+
+# Print stats - catane3
+total = db.catane3.count()
 print "Total entries :", total
 
-wins = db.catane2.find({'score': {'$in': ["10","11","12","13","14","15"]}})
-games = db.catane2.find()
+wins = db.catane3.find({'score': {'$in': ["10","11","12","13","14","15"]}})
+games = db.catane3.find()
 
 print_stats(wins, games)

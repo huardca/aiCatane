@@ -368,7 +368,7 @@ def runner(initConfig, parameter, fixval, min, max, step, lock, write_pipe):
             while config[3] <= max:
                 begin = time.mktime(time.gmtime())
                 while config[4] <= max:
-                    run_config(config, lock, write_pipe, 5)
+                    run_config(config, lock, write_pipe, 2)
                     # print "running config", config
                     config[4] += step
                     it += 1
@@ -461,7 +461,7 @@ if __name__ == '__main__':
     # Create communicating pipe and sync mechanism
     write_pipe, read_pipe = Pipe()
     lock = Lock()
-    sender = Process(target=init_sender, args=(read_pipe,'catane2'))
+    sender = Process(target=init_sender, args=(read_pipe,'catane3'))
     sender.start()
 
     min = 0.7
@@ -475,7 +475,7 @@ if __name__ == '__main__':
     while(cur <= max):
         proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
         proc.start()
-    
+
         cur += step
 
     cur = min
