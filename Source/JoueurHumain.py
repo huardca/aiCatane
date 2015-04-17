@@ -11,27 +11,6 @@ class State:
     END = 2
     FINISH = 3
 
-class Commodity:
-    ROAD = 0
-    SETTLEMENT = 1
-    CITY = 2
-    CARD = 3
-
-class Endgame:
-    LONGEST_ROAD = 0
-    LARGEST_ARMY = 1
-    SETTLEMENT = 2
-    CITY = 3
-
-class HumanAction:
-    def __init__(self, action, data, score):
-        self.action = action
-        self.data = data
-        self.score = score
-
-    def output(self):
-        return self.data
-
 ################## Joueur Intelligent
 class JoueurHumain(Joueur):
 
@@ -49,6 +28,8 @@ class JoueurHumain(Joueur):
         self.premiereIntersectionRoute = {}
         self.deuxiemeColonie = {}
         self.deuxiemeIntersectionRoute = {}
+
+        self.nbTours = 0
 
         self.state = State.EXPAND
 
@@ -135,20 +116,15 @@ class JoueurHumain(Joueur):
             if action is not None:
                 return action
 
-
-        self.gererExtra()
-
+        self.nbTours += 1
         print 'TERMINER'
         return Action.TERMINER
-
-    def gererExtra(self):
-        pass
 
     def roadOrCard(self, mappe, infoJoueurs):
         if self.favorRoad(mappe, infoJoueurs):
             if self.shouldBuildRoad(mappe):
                 print("BUILD LONGEST ROAD")
-                action = self.tryBuildBestRoad(mappe, self.state <> State.EXPAND)
+                action = self.tryBuildBestRoad(mappe, True)
                 if action is not None:
                     return action
             if self.shouldBuyCard(mappe, infoJoueurs):
@@ -159,7 +135,7 @@ class JoueurHumain(Joueur):
         else:
             if self.shouldBuyCard(mappe, infoJoueurs):
                 print("TRY CARTE")
-                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], True)
+                action = self.tryBuildCommodity(Action.ACHETER_CARTE, [], False)
                 if action is not None:
                    return action
             if self.shouldBuildRoad(mappe):
