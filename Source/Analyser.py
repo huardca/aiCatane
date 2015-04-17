@@ -43,7 +43,7 @@ def print_stats(wins, games):
             total_laine[w['laine']] = 0
         total_laine[w['laine']] += 1
 
-        config = (w['bois'], w['ble'], w['argile'], w['mineral'], w['laine'], )
+        config = (w['ble'], w['argile'], w['bois'], w['mineral'], w['laine'], )
         if config not in total_configs:
             total_configs[config] = 0
         total_configs[config] += 1
@@ -81,7 +81,7 @@ def print_stats(wins, games):
             laine[w['laine']] = 0
         laine[w['laine']] += 1
 
-        config = (w['bois'], w['ble'], w['argile'], w['mineral'], w['laine'], )
+        config = (w['ble'], w['argile'], w['bois'], w['mineral'], w['laine'], )
         if config not in configs:
             configs[config] = 0
         configs[config] += 1

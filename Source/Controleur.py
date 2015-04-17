@@ -18,6 +18,7 @@ import urllib2
 import copy
 import os
 import time
+from decimal import Decimal
 from Joueur import *
 from Mappe import *
 from Cartes import *
@@ -412,6 +413,7 @@ def run_config(resourceValues, lock, write_pipe, nb):
         info = c.obtenirInfoJoueurs()
         print info
 
+        print 'pushing data',resourceValues
         push_data(resourceValues, info, lock, write_pipe)
 
 def push_data(val, info, lock, write_pipe):
@@ -428,7 +430,15 @@ def get_top_100():
     values = []
 
     for line in top.split('\n'):
-        values.append(eval(line))
+        tup = eval(line)
+
+        tup = list(tup)
+        for i in range(5):
+            x = Decimal(tup[i])
+            x = round(x, 1)
+            tup[i] = x
+        tup = tuple(tup)
+        values.append(tup)
 
     return values
 
@@ -482,6 +492,7 @@ if __name__ == '__main__':
     for i in xrange(0, len(configs), n):
         proc = Process(target=config_runner, args=(configs[i:i+n], lock, write_pipe,))
         proc.start()
+
 
     raw_input("Press Enter to quit...")
     f.close()
