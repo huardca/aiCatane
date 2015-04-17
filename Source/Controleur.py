@@ -367,7 +367,7 @@ def runner(initConfig, parameter, fixval, min, max, step, lock, write_pipe):
             while config[3] <= max:
                 begin = time.mktime(time.gmtime())
                 while config[4] <= max:
-                    run_config(config, lock, write_pipe)
+                    run_config(config, lock, write_pipe, 5)
                     # print "running config", config
                     config[4] += step
                     it += 1
@@ -394,10 +394,8 @@ def runner(initConfig, parameter, fixval, min, max, step, lock, write_pipe):
         config[2] = min
         config[1] += step
 
-
-
-def run_config(resourceValues, lock, write_pipe):
-    for z in range(5):
+def run_config(resourceValues, lock, write_pipe, nb):
+    for z in range(nb):
         # Game loop
         c = Controleur(['Humain','AI','AI','AI'])
 
@@ -421,6 +419,26 @@ def push_data(val, info, lock, write_pipe):
     write_pipe.send((val, info))
     lock.release()
 
+def get_top_100():
+    url = 'http://step.polymtl.ca/~alexrose/catane/top100.txt'
+    response = urllib2.urlopen(url=url, timeout=120)
+    top = response.read()
+    response.close()
+
+    values = []
+
+    for line in top.split('\n'):
+        values.append(eval(line))
+
+    return values
+
+def config_runner(configs, lock, write_pipe):
+    for config in configs:
+        run_config(config, lock, write_pipe, 5)
+        print "Running configs", configs
+
+
+
 # f = file('out.txt', 'w+')
 f = file(os.devnull, 'w+')
 console_handle = sys.stdout
@@ -433,7 +451,7 @@ if __name__ == '__main__':
     # Create communicating pipe and sync mechanism
     write_pipe, read_pipe = Pipe()
     lock = Lock()
-    sender = Process(target=sender_proc, args=(read_pipe,))
+    sender = Process(target=init_sender, args=(read_pipe,'catane2'))
     sender.start()
 
     min = 0.7
@@ -442,19 +460,28 @@ if __name__ == '__main__':
 
     cur = min
 
-    while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
+    ### RUN GAMES WITH INCREMENTAL VALUES
+
+    # while(cur <= max):
+    #     proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
+    #     proc.start()
+    #
+    #     cur += step
+    #
+    # cur = min
+    # while(cur <= max):
+    #     proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1, lock, write_pipe,))
+    #     proc.start()
+    #
+    #     cur += step
+
+    ### RUN TOP 100 CONFIGS
+    configs = get_top_100()
+
+    n = len(configs)/8
+    for i in xrange(0, len(configs), n):
+        proc = Process(target=config_runner, args=(configs[i:i+n], lock, write_pipe,))
         proc.start()
-
-        cur += step
-
-    cur = min
-    while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1, lock, write_pipe,))
-        proc.start()
-
-        cur += step
-
 
     raw_input("Press Enter to quit...")
     f.close()
