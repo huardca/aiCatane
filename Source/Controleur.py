@@ -461,7 +461,7 @@ if __name__ == '__main__':
     # Create communicating pipe and sync mechanism
     write_pipe, read_pipe = Pipe()
     lock = Lock()
-    sender = Process(target=init_sender, args=(read_pipe,'catane3'))
+    sender = Process(target=init_sender, args=(read_pipe,'catane4'))
     sender.start()
 
     min = 0.7
@@ -472,26 +472,26 @@ if __name__ == '__main__':
 
     ### RUN GAMES WITH INCREMENTAL VALUES
 
-    while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
-        proc.start()
-
-        cur += step
-
-    cur = min
-    while(cur <= max):
-        proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1, lock, write_pipe,))
-        proc.start()
-
-        cur += step
+    # while(cur <= max):
+    #     proc = Process(target=runner, args=(resourceValues, 0, cur, 0.7, 1.0, 0.1, lock, write_pipe,))
+    #     proc.start()
+    #
+    #     cur += step
+    #
+    # cur = min
+    # while(cur <= max):
+    #     proc = Process(target=runner, args=(resourceValues, 0, cur, 1.1, 1.3, 0.1, lock, write_pipe,))
+    #     proc.start()
+    #
+    #     cur += step
 
     ### RUN TOP 100 CONFIGS
-    # configs = get_top_100()
-    #
-    # n = len(configs)/8
-    # for i in xrange(0, len(configs), n):
-    #     proc = Process(target=config_runner, args=(configs[i:i+n], lock, write_pipe,))
-    #     proc.start()
+    configs = get_top_100()
+
+    n = len(configs)/8
+    for i in xrange(0, len(configs), n):
+        proc = Process(target=config_runner, args=(configs[i:i+n], lock, write_pipe,))
+        proc.start()
 
 
     raw_input("Press Enter to quit...")

@@ -179,10 +179,19 @@ db = connection.alexrose
 # print_stats(wins, games)
 
 # Print stats - catane3
-total = db.catane3.count()
+# total = db.catane3.count()
+# print "Total entries :", total
+#
+# wins = db.catane3.find({'score': {'$in': ["10","11","12","13","14","15"]}})
+# games = db.catane3.find()
+#
+# print_stats(wins, games)
+
+# Print stats - catane4
+total = db.catane4.count()
 print "Total entries :", total
 
-wins = db.catane3.find({'score': {'$in': ["10","11","12","13","14","15"]}})
-games = db.catane3.find()
+wins = db.catane4.find({'score': {'$in': ["10","11","12","13","14","15"]}})
+games = db.catane4.find()
 
 print_stats(wins, games)
